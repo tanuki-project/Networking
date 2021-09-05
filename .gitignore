@@ -54,4 +54,5 @@ dkms.conf
 # Binary Modules
 simple_vswitch/bin/cmd/vswconfig
 simple_vswitch/src/cmd/vswconfig
+scan_lldp/scanlldp
 
