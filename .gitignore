@@ -54,5 +54,6 @@ dkms.conf
 # Binary Modules
 simple_vswitch/bin/cmd/vswconfig
 simple_vswitch/src/cmd/vswconfig
+simple_pcap/pcap
 scan_lldp/scanlldp
 
