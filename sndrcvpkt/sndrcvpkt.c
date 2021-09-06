@@ -136,7 +136,7 @@ get_hwaddr(int fd, char* ifname, struct ether_addr* addr) {
 	return -1;
 	}
 	memcpy(addr,&ifrq.ifr_hwaddr.sa_data,ETH_ALEN);
-	printf("SIOGGIFHWADDR(%s) = %s\n", ifname, ether_ntoa(addr));
+	//printf("SIOGGIFHWADDR(%s) = %s\n", ifname, ether_ntoa(addr));
 	return 0;
 }
 
