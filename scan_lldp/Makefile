@@ -1,5 +1,3 @@
-#ident  "%W% %G% %U% - FUJITSU"
-
 CC = cc
 CFLAGS =
 LIBS = -L/lib
