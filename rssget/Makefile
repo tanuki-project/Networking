@@ -1,5 +1,3 @@
-#ident  "%W% %G% %U% - FUJITSU"
-
 CC = cc -g
 CFLAGS = 
 INCLUDES = -I/usr/include/libxml2
