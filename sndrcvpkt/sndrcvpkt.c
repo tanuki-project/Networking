@@ -24,7 +24,7 @@
 #include	<arpa/inet.h>
 
 #define	VLAN_VID_MASK	0xfff
-#define	ETH_P_8021Q	0x8100
+#define	ETH_P_DUMMY	0x2020
 
 void	print_packet(u_char*, int);
 int	init_socket(char*, struct sockaddr_ll*);
@@ -178,7 +178,7 @@ sndrcv_packet(
 		ether = (struct ethhdr*)packet;
 		get_hwaddr(fd_rcv, ifname_rcv, (struct ether_addr*)&ether->h_dest);
 		get_hwaddr(fd_snd, ifname_snd, (struct ether_addr*)&ether->h_source);
-		ether->h_proto = htons(0x8888);
+		ether->h_proto = htons(ETH_P_DUMMY);
 		p += sizeof(struct ethhdr);
 		memset(p,0x01,60);
 		pktlen =  50 + sizeof(struct ethhdr);
