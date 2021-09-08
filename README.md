@@ -20,3 +20,7 @@ Linux kernel module which do L2 switching.
 ## sndrcvpkt
 
 Send and resieve ethernet packet with raw ethernet socket.
+
+## watch_netlink
+
+Watch modification of network confuguration with netlink socket.
