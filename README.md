@@ -15,7 +15,7 @@ simple packet captrue tool.
 
 ## simple_vswitch
 
-Linux kernel module which do L2 switching.
+sample of Linux kernel module for L2 switching.
 
 ## sndrcvpkt
 
