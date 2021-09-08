@@ -58,4 +58,5 @@ simple_pcap/pcap
 scan_lldp/scanlldp
 rssget/rssget
 sndrcvpkt/sndrcvpkt
+watch_netlink/linkmonitor
 
