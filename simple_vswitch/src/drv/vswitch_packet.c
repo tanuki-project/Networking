@@ -1,6 +1,10 @@
 /*
  *
+ *	L2 switching routine for simple_vswitch
  *
+ *		File:		vswitch_packet.c
+ *		Date:		2021.09.09
+ *		Auther:		T.Sayama
  *
  */
 
@@ -58,51 +62,58 @@ vswitch_rx(struct sk_buff **pskb)
 	pport_t			*port;
 	struct ethhdr		*ethp = NULL;
 	u_long			eflags    = 0;
+	int			rtn= 0;
 
 	if ( pskb == NULL || *pskb == NULL ) {
 		return RX_HANDLER_PASS;
 	}
-
 	skb = *pskb;
 	if (skb->pkt_type == PACKET_LOOPBACK) {
 		return RX_HANDLER_PASS;
 	}
-
 	skb = skb_share_check(skb, GFP_ATOMIC);
 	if (skb == NULL) {
 		return RX_HANDLER_CONSUMED;;
 	}
 	skb_push(skb, ETH_HLEN);
 	ethp = (struct ethhdr *)skb_mac_header(skb);
-
-	devp = skb->dev;
-	port = (pport_t*)rcu_dereference(devp->rx_handler_data);
 	if (skb_linearize(skb) != 0) {
 		dev_kfree_skb(skb);
 		return RX_HANDLER_CONSUMED;;
 	}
+
+	devp = skb->dev;
+	port = (pport_t*)rcu_dereference(devp->rx_handler_data);
+	if (port == NULL) {
+		return RX_HANDLER_CONSUMED;;
+	}
+	vsw_write_lock(&vswitch_rwlock, &eflags);
+	atomic_inc(&port->refcnt);
 	dbgprintk(KERN_INFO "vswitch_rx: %s:%x shared:%d cloned:%d",
 	    port->portname, ntohs(ethp->h_proto), skb_shared(skb), skb->cloned);
 
-	/* learn MAC address and port */
-	vsw_write_lock(&vswitch_rwlock, &eflags);
+	/* learn MAC address and port on FDB */
 	vswitch_set_fdb(ethp->h_source, port);
 	vsw_write_unlock(&vswitch_rwlock, &eflags);
 
-	if (ethp->h_dest[0] & 0x01) {	/* destination is multicast */
-		if (memcmp(ethp->h_dest, c_bpdu_addr, 5) == 0 &&
-		    ethp->h_dest[5] >= 0x00 && ethp->h_dest[5] <= 0x0f) {
-                        /* drop not forwardable packet		*/
-                        /* STP, BPDU, LACP, LLDP, ...		*/
-			/* destination is 01:80:C2:00:00:0X	*/
-                        dev_kfree_skb(skb);
-                        return NET_XMIT_DROP;
-                }
+	/* drop not forwardable packet		*/
+	/* STP, BPDU, LACP, LLDP, ...		*/
+	if (memcmp(ethp->h_dest, c_bpdu_addr, 5) == 0 &&
+	    ethp->h_dest[5] >= 0x00 && ethp->h_dest[5] <= 0x0f) {
+		/* destination is 01:80:C2:00:00:0X	*/
+		dev_kfree_skb(skb);
+		vsw_write_lock(&vswitch_rwlock, &eflags);
+		atomic_dec(&port->refcnt);
+		vsw_write_unlock(&vswitch_rwlock, &eflags);
+		return NET_XMIT_DROP;
 	}
 
-	vswitch_forward(port, skb);
+	rtn = vswitch_forward(port, skb);
 	consume_skb(skb);
-        return RX_HANDLER_CONSUMED;;
+	vsw_write_lock(&vswitch_rwlock, &eflags);
+	atomic_dec(&port->refcnt);
+	vsw_write_unlock(&vswitch_rwlock, &eflags);
+        return rtn;
 }
 
 /* foward or drop packet */
@@ -129,7 +140,8 @@ vswitch_forward(
 	}
 
 	ethp = (struct ethhdr *)skb_mac_header(skb);
-	if (!(ethp->h_dest[0] & 0x01)) {	/* destination is unicast */
+	if (!(ethp->h_dest[0] & 0x01)) {
+		/* search fdb when destination is unicast */
 		vsw_read_lock(&vswitch_rwlock, &eflags);
 		fdb = vswitch_search_fdb(ethp->h_dest);
 		vsw_read_unlock(&vswitch_rwlock, &eflags);
@@ -145,7 +157,7 @@ vswitch_forward(
 		return NET_XMIT_SUCCESS;
 	}
 
-	/* flood packet */
+	/* forward packet to all ports */
 	vsw_read_lock(&vswitch_rwlock, &eflags);
 	list_for_each (position, &vswitch_port_list) {
 		entry = list_entry(position, pport_t, list);

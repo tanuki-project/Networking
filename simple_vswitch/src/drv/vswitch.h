@@ -1,6 +1,10 @@
 /*
  *
- * 
+ *	Data definition of simple_vswitch
+ *
+ *		File:		vswitch.h
+ *		Date:		2021.09.09
+ *		Auther:		T.Sayama 
  *
  */
 
@@ -45,32 +49,24 @@
 #define FDB_DEFAULT_TIMER	180
 #define FDB_TIMER_INTERVAL	10
 
-int		vswitch_init(void);
-void		vswitch_exit(void);
-int		vswitch_open(struct inode *, struct file *);
-int		vswitch_close(struct inode *, struct file *);
-long		vswitch_ioctl(struct file *, u_int, u_long);
-ssize_t		vswitch_read(struct file *, char *, size_t, loff_t *);
-
+/* Lock for Ports and FDB */
 typedef struct	vsw_rwlock		vsw_rwlock_t;
-
 struct	vsw_rwlock {
 	rwlock_t	lock;
 	atomic_t	preemption;
 };
 
+/* Port definition */
 typedef	struct	pport		pport_t;
-
 struct pport {
 	struct list_head	list;
 	char			portname[IFNAMSIZ];
-	int			link_state;
 	struct net_device*	devp;
+	atomic_t		refcnt;
 };
 
 /* FDB entry */
 typedef struct	vswitch_fdb_entry	vswitch_fdb_entry_t;
-
 struct  vswitch_fdb_entry {
 	struct list_head	list;
 	pport_t			*port;
@@ -79,19 +75,27 @@ struct  vswitch_fdb_entry {
 	u_char			ethaddr[ETH_ALEN];
 };
 
+
+/* Function prototype */
+int		vswitch_init(void);
+void		vswitch_exit(void);
+int		vswitch_open(struct inode *, struct file *);
+int		vswitch_close(struct inode *, struct file *);
+long		vswitch_ioctl(struct file *, u_int, u_long);
+ssize_t		vswitch_read(struct file *, char *, size_t, loff_t *);
 pport_t *	find_port_by_name(char *);
 pport_t *	find_port_by_dev(struct net_device *);
-
-int	vswitch_rx_handler_register(struct net_device*, pport_t*);
-void	vswitch_rx_handler_unregister(struct net_device*);
+int		vswitch_rx_handler_register(struct net_device*, pport_t*);
+void		vswitch_rx_handler_unregister(struct net_device*);
 rx_handler_result_t	vswitch_rx(struct sk_buff **);
-int	vswitch_forward(pport_t*, struct sk_buff*);
-
-int	vswitch_set_fdb(u_char*, pport_t*);
+int		vswitch_forward(pport_t*, struct sk_buff*);
+int		vswitch_set_fdb(u_char*, pport_t*);
 vswitch_fdb_entry_t*	vswitch_search_fdb(u_char *);
-void	vswitch_remove_fdb_list(void);
-void	vswitch_countdown_fdb(void);
-void	vswitch_disable_fdb(pport_t*);
+void		vswitch_remove_fdb_list(void);
+void		vswitch_countdown_fdb(void);
+void		vswitch_disable_fdb(pport_t*);
+
+/* Inline functions */
 
 static inline void
 vsw_rwlock_init(vsw_rwlock_t *lock)
@@ -144,28 +148,6 @@ vsw_write_unlock(vsw_rwlock_t *lock, u_long *eflags)
 	if (eflags) {
 		local_irq_restore(*eflags);
 	}
-	return;
-}
-
-static inline void
-vsw_write_release(vsw_rwlock_t *lock, u_long *eflags)
-{
-	atomic_inc(&lock->preemption);
-	write_unlock(&lock->lock);
-	if (eflags) {
-		local_irq_restore(*eflags);
-	}
-	return;
-}
-
-static inline void
-vsw_write_reacquire(vsw_rwlock_t *lock, u_long *eflags)
-{
-	if (eflags) {
-		local_irq_save(*eflags);
-	}
-	write_lock(&lock->lock);
-	atomic_dec(&lock->preemption);
 	return;
 }
 

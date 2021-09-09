@@ -1,6 +1,10 @@
 /*
  *
+ *	Core routine of simple_vswitch
  *
+ *		File:		vswitch_main.h
+ *		Date:		2021.09.09
+ *		Auther:		T.Sayama
  *
  */
 
@@ -13,8 +17,8 @@ MODULE_VERSION(VSWITCH_VERSION);
 
 static int	debug_level = 1;
 
-int			g_vswitch_major;
-struct module		*g_vswitch_module = NULL;
+int		vswitch_major;
+struct module	*vswitch_module = NULL;
 
 /* callback functions for file operation */
 struct file_operations vswitch_fops = {
@@ -25,6 +29,7 @@ struct file_operations vswitch_fops = {
 	.unlocked_ioctl = vswitch_ioctl,
 };
 
+/* definiton of net_device handler */
 int vswitch_netdev_handler( struct notifier_block*, u_long, void*);
 
 struct notifier_block vswitch_netdev_notifier = {
@@ -33,6 +38,7 @@ struct notifier_block vswitch_netdev_notifier = {
 	0				/* priority */
 };
 
+/* port and fdb list */
 vsw_rwlock_t		vswitch_rwlock;
 struct list_head	vswitch_port_list;
 int			vswitch_port_num;
@@ -48,8 +54,8 @@ void vswitch_timer_callback(struct timer_list*);
 int
 vswitch_init(void)
 {
-	g_vswitch_major = register_chrdev(0, VSWITCH_DEVNAME, &vswitch_fops);
-	if (g_vswitch_major < 0) {
+	vswitch_major = register_chrdev(0, VSWITCH_DEVNAME, &vswitch_fops);
+	if (vswitch_major < 0) {
 		return -1;
 	}
 	INIT_LIST_HEAD(&vswitch_port_list);
@@ -72,6 +78,7 @@ vswitch_exit(void)
 	u_long		eflags = 0;
 
 	del_timer(&vswitch_timer_list);
+	unregister_netdevice_notifier(&vswitch_netdev_notifier);
 	vsw_read_lock(&vswitch_rwlock, &eflags);
 	if (vswitch_port_num > 0) {
 		vsw_read_unlock(&vswitch_rwlock, &eflags);
@@ -80,12 +87,13 @@ vswitch_exit(void)
 	}
 	if (vswitch_fdb_num > 0) {
 		vsw_read_unlock(&vswitch_rwlock, &eflags);
+		vsw_write_lock(&vswitch_rwlock, &eflags);
 		vswitch_remove_fdb_list();
+		vsw_write_unlock(&vswitch_rwlock, &eflags);
 		vsw_read_lock(&vswitch_rwlock, &eflags);
 	}
 	vsw_read_unlock(&vswitch_rwlock, &eflags);
-	unregister_netdevice_notifier(&vswitch_netdev_notifier);
-	unregister_chrdev(g_vswitch_major, VSWITCH_DEVNAME);
+	unregister_chrdev(vswitch_major, VSWITCH_DEVNAME);
 	dbgprintk(KERN_INFO "vswitch driver uninstalled.\n");
 	return;
 }
@@ -103,8 +111,8 @@ vswitch_open(
 )
 {
 	dbgprintk(KERN_INFO "vswitch driver: open\n");
-	if (g_vswitch_module) {
-		try_module_get(g_vswitch_module);
+	if (vswitch_module) {
+		try_module_get(vswitch_module);
 	}
 	return 0;
 }
@@ -118,8 +126,8 @@ vswitch_close(
 )
 {
 	dbgprintk(KERN_INFO "vswitch driver: close\n");
-	if (g_vswitch_module) {
-		module_put(g_vswitch_module);
+	if (vswitch_module) {
+		module_put(vswitch_module);
 	}
 	return 0;
 }
@@ -229,6 +237,7 @@ ioc_add_port(
 	memset(port, 0, sizeof(pport_t));
 	strncpy(port->portname, portname, sizeof(port->portname) - 1);
 	port->devp = dev;
+	atomic_set(&port->refcnt, 0);
 	vswitch_rx_handler_register(port->devp, port);
 	vsw_write_lock(&vswitch_rwlock, &eflags);
 	list_add_tail(&port->list, &vswitch_port_list);
@@ -253,6 +262,10 @@ ioc_delete_port(
 	if (port == NULL) {
 		vsw_read_unlock(&vswitch_rwlock, &eflags);
 		return -ENODEV;
+	}
+	while (atomic_read(&port->refcnt) > 0) {
+		vsw_read_unlock(&vswitch_rwlock, &eflags);
+		vsw_read_lock(&vswitch_rwlock, &eflags);
 	}
 	vsw_read_unlock(&vswitch_rwlock, &eflags);
 	vswitch_rx_handler_unregister(port->devp);
@@ -280,6 +293,9 @@ remove_allports(void)
 	while (!list_empty(&vswitch_port_list)) {
 		position = vswitch_port_list.next;
 		port = list_entry(position, pport_t, list);
+		if (port == NULL) {
+			continue;
+		}
 		vsw_read_unlock(&vswitch_rwlock, &eflags);
 		vsw_write_lock(&vswitch_rwlock, &eflags);
 		vswitch_disable_fdb(port);
@@ -287,6 +303,12 @@ remove_allports(void)
 		list_del(&port->list);
 		vswitch_port_num--;
 		vsw_write_unlock(&vswitch_rwlock, &eflags);
+		vsw_read_lock(&vswitch_rwlock, &eflags);
+		while (atomic_read(&port->refcnt) > 0) {
+			vsw_read_unlock(&vswitch_rwlock, &eflags);
+			vsw_read_lock(&vswitch_rwlock, &eflags);
+		}
+		vsw_read_unlock(&vswitch_rwlock, &eflags);
 		vswitch_rx_handler_unregister(port->devp);
 		dbgprintk(KERN_INFO "delete port: %s\n", port->portname);
 		kfree(port);
@@ -482,9 +504,11 @@ vswitch_netdev_handler(
 	vsw_read_lock(&vswitch_rwlock, NULL);
 	list_for_each (position, &vswitch_port_list) {
 		entry = list_entry(position, pport_t, list);
-		//
-		//
-		//
+		if (devp == entry->devp) {
+			if (event == NETDEV_DOWN) {
+				vswitch_disable_fdb(entry);
+			}
+		}
 	}
 	vsw_read_unlock(&vswitch_rwlock, NULL);
 	return NOTIFY_DONE;

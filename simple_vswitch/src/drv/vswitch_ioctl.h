@@ -1,6 +1,10 @@
 /*
  *
+ *      I/O control definition of simple_vswitch
  *
+ *              File:           vswitch_ioctl.h
+ *              Date:           2021.09.09
+ *              Auther:         T.Sayama
  *
  */
 

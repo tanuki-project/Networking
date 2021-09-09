@@ -1,20 +1,21 @@
 /*
  *
+ *      Forwarding database for simple_vswitch
  *
+ *              File:           vswitch_fdb.c
+ *              Date:           2021.09.09
+ *              Auther:         T.Sayama
  *
  */
 
 #include        "vswitch.h"
 #include        "vswitch_ioctl.h"
 
-extern vsw_rwlock_t		vswitch_rwlock;
-extern struct list_head		vswitch_port_list;
-extern int			vswitch_port_num;
-extern struct list_head		vswitch_fdb_list;
-extern int			vswitch_fdb_num;
-
 static int			debug_level = 1;
 #define	MAC_FMT			"%02x:%02x:%02x:%02x:%02x:%02x"
+
+extern struct list_head		vswitch_fdb_list;
+extern int			vswitch_fdb_num;
 
 /* set or update fdb entry. */
 
