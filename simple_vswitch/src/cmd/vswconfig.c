@@ -1,7 +1,9 @@
 /*
- * 
+ * 	Configratin command for simple_vswitch
  *
- *
+ *		Add Port:	vswconfig add ifname
+ *		Delete Port:	vswconfig delete ifname
+ *		Show Port List:	vswconfig show
  * 
  */
 
@@ -15,11 +17,11 @@
 
 void	usage		(void);
 int	docommand	(char *, char **, int);
+int	vsw_ioctl	(int, void*);
 
 int	addport		(int, char**);
 int	delport		(int, char**);
 int	show 		(int, char**);
-int	vsw_ioctl	(int, void*);
 
 static struct builtin {
 	char	*name;
@@ -31,6 +33,8 @@ static struct builtin {
 	{"show",        show,        DESC_SHOW},
 	{NULL, NULL, NULL}
 };
+
+/* main */
 
 int
 main(int argc, char *argv[])
@@ -62,6 +66,8 @@ main(int argc, char *argv[])
 	return 0;
 }
 
+/* print usage */
+
 void
 usage(void)
 {
@@ -77,6 +83,8 @@ usage(void)
 	}
 	return;
 }
+
+/* add port to vswitch */
 
 int
 addport(int argc, char *argv[])
@@ -100,6 +108,8 @@ addport(int argc, char *argv[])
 	return VSWCONFIG_OK;
 }
 
+/* delete port form vswitch */
+
 int
 delport(int argc, char *argv[])
 {
@@ -121,6 +131,8 @@ delport(int argc, char *argv[])
 	printf("info: command succeeded.\n");
 	return VSWCONFIG_OK;
 }
+
+/* print list of ports */
 
 int
 show(int argc, char *argv[])
@@ -148,6 +160,8 @@ show(int argc, char *argv[])
 	return VSWCONFIG_OK;
 }
 
+/* dispatch sub commands */
+
 int
 docommand(char *command, char *args[], int narg)
 {
@@ -164,6 +178,8 @@ docommand(char *command, char *args[], int narg)
 	}
 	return (*tp->func)(narg, args);
 }
+
+/* call ioctl to vswitch */
 
 int
 vsw_ioctl(int request, void *iobuf)
