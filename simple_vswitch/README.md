@@ -1,8 +1,11 @@
 # 1. simple_vswitch の概要
 
 　機能概要: 簡易的なL2スイッチの機能をもつカーネルモジュールおよびその管理コマンドが含みます
+ 
 　動作環境: Linux CentOS8
+ 
 　開発言語: C言語
+ 
 　関連技術: Ethernet, L2スイッチ, デバイスドライバ
 
 ## 1.1 カーネルモジュール(vswitch.ko)
@@ -30,8 +33,11 @@ vswconfig add コマンドを実行すると vswitch.ko ではカーネル関数
 ## 2.2 パケットの受信
 
 NICでパケットを受信した場合、2.1で登録した受信ハンドラが呼び出されます。受信ハンドラでは以下の処理を行います。
+
 ・受信パケットの送信元MACアドレスと受信したポートをFDB(Forwarding Database)に設定します。
+
 ・BPDUやLLDP等、転送の必要がないL2の制御用パケットを破棄します。
+
 ・パケットの転送処理を呼び出します。
 
 　　[vswitch_packet.c: vswitch_rx()](https://github.com/tanuki-project/Networking/blob/main/simple_vswitch/src/drv/vswitch_packet.c#L57-L117)
@@ -39,7 +45,9 @@ NICでパケットを受信した場合、2.1で登録した受信ハンドラ�
 ## 2.3 パケットの転送
 
 ・宛先MACアドレスがユニキャストの場合、FDBから転送先のポートを検索します。
+
 ・有効な転送先ポートが見つかった場合、カーネル　関数dev_queue_xmit() により該当ポートからパケットを送信します。　
+
 ・転送先ポートが見つからない場合や宛先がマルチキャストアドレスの場合、パケットを受信したポートを除く全てのポートからパケットを送信します。
 
 　　[vswitch_packet.c: vswitch_forward()](https://github.com/tanuki-project/Networking/blob/main/simple_vswitch/src/drv/vswitch_packet.c#L121-L178)
