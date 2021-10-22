@@ -1,5 +1,3 @@
-#ident  "%W% %G% %U% - FUJITSU"
-
 CC = /usr/bin/gcc
 CFLAGS = -g
 LIBS = -L/lib
