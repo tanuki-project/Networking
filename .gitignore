@@ -59,4 +59,6 @@ scan_lldp/scanlldp
 rssget/rssget
 sndrcvpkt/sndrcvpkt
 watch_netlink/linkmonitor
+tcp_sock/tcptpc
+tcp_sock/tcptps
 
