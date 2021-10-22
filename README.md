@@ -11,7 +11,7 @@ Reciewve LLDP packets and dump them.
 
 ## simple_pcap
 
-simple packet captrue tool.
+Simple packet captrue tool.
 
 ## simple_vswitch
 
@@ -20,6 +20,10 @@ sample of Linux kernel module for L2 switching.
 ## sndrcvpkt
 
 Send and resieve ethernet packet with raw ethernet socket.
+
+## tcp_sock
+
+Sample of TCP Socket.
 
 ## watch_netlink
 
