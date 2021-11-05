@@ -9,6 +9,10 @@ Simple rss reader.
 
 Reciewve LLDP packets and dump them.
 
+## set_ipaddr
+
+Sample ansible playbook for setting ifcfg-ethX
+
 ## simple_pcap
 
 Simple packet captrue tool.
