@@ -1,0 +1,51 @@
+---
+- hosts: all
+  tasks:
+  - name: check target dir
+    stat :
+      path: "{{ target_dir }}"
+    register: dir
+    failed_when:
+      - dir.stat.exists == false
+      - dir.stat.isdir == false
+
+  - name: create ifcfg
+    file        :
+      path : "{{ target_dir }}/ifcfg-{{ ifcfg.name }}"
+      state: touch
+      owner: root
+      group: root
+      mode : 0644
+    when:
+      - ansible_os_family == 'RedHat'
+
+  - name: remove params from ifcfg
+    lineinfile  :
+      dest    : "{{ target_dir }}/ifcfg-{{ ifcfg.name }}"
+      backrefs: yes
+      state   : absent
+      regexp  : "{{ item }}"
+    with_items  :
+      - '^IPADDR[= ]'
+      - '^NETMASK[= ]'
+      - '^NETWORK[= ]'
+      - '^BROADCAST[= ]'
+      - '^PREFIX[= ]'
+      - '^GATEWAY[= ]'
+      - '^DNS1[= ]'
+    when:
+      - ansible_os_family == 'RedHat'
+
+  - name: set params to ifcfg of interface1
+    lineinfile  :
+      dest    : "{{ target_dir }}/ifcfg-{{ ifcfg.name }}"
+      regexp  : "{{ item.regexp }}"
+      line    : "{{ item.line }}"
+    with_items  :
+      - { regexp: '^IPADDR[= ]',     line: "IPADDR={{ ifcfg.ipaddr }}" }
+      - { regexp: '^PREFIX[= ]',     line: "PREFIX={{ ifcfg.prefix }}" }
+      - { regexp: '^GATEWAY[= ]',    line: "GATEWAY={{ gateway }}" }
+      - { regexp: '^DNS1[= ]',       line: "DNS1={{ dns1 }}" }
+    when:
+      - ansible_os_family == 'RedHat'
+

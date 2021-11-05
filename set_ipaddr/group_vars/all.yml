@@ -1,0 +1,5 @@
+---
+target_dir : '/tmp/network-scripts'
+gateway    : '192.168.0.1'
+dns1       : '192.168.0.1'
+
