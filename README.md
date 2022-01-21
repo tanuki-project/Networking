@@ -9,6 +9,10 @@ Simple rss reader.
 
 Reciewve LLDP packets and dump them.
 
+## scraper
+
+Scrape stock price from yahoo japan.
+
 ## set_ipaddr
 
 Sample ansible playbook for setting ifcfg-ethX.
@@ -19,7 +23,7 @@ Simple packet captrue tool.
 
 ## simple_vswitch
 
-sample of Linux kernel module for L2 switching.
+Sample of Linux kernel module for L2 switching.
 
 ## sndrcvpkt
 
