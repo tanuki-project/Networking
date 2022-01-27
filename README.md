@@ -1,5 +1,5 @@
 # Netrworking
-sample programs for networking
+Sample programs for Linux networking.
 
 ## rssget
 
