@@ -1,31 +1,28 @@
 # 1. ツールの概要
 
-機能概要: 2本のNICが同一LANに接続されているかどうかを確認するためパケットを送受信します
-
-動作環境: Linux CentOS8
-
-開発言語: C言語
-
-関連技術: RAW Etherソケット
+- 機能概要:　2本のNICが同一LANに接続されているかどうかを確認するためパケットを送受信します
+- 動作環境:　Linux CentOS8
+- 開発言語:　C言語
+- 関連技術:　RAW Etherソケット
 
 # 2. 処理概要
 サンプルコード[ sndrcvpkt ](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/)を用いて処理概要を説明します。
 ## 2.1 ソケットの初期化
 socket関数で送信用および受信用のRAWソケットを取得し、各々bind関数を用いて指定したNICに接続します。
-
-　　　[sndrcvpkt.c: main()](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/sndrcvpkt.c#L61-L78)
+|[sndrcvpkt.c: main()](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/sndrcvpkt.c#L61-L78)|
+|-|
 
 ## 2.2 パケットの送信
 パケットを作成してwrite関数で送信用NICからパケットを送信します。
 Ethenetの場合、ethhdr 構造体を送信バッファの0バイト目にマッピングし、宛先MACアドレス[6Byte]、送信元MACアドレス[6Byte]、フレームタイプ[2Byte]を設定することで送信パケットのヘッダ部分が生成されます。
-
-　　　[sndrcvpkt.c: sndrcv_pkt()](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/sndrcvpkt.c#L177-L201)
+|[sndrcvpkt.c: sndrcv_pkt()](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/sndrcvpkt.c#L177-L201)|
+|-|
 
 ## 2.3 パケットの受信
 recvfrom関数で受信用NICでパケットを受信します。
 受信したパケットは送信したパケットと内容が同じになっているはずです。
-
-　　　[sndrcvpkt.c: sndrcv_pkt()](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/sndrcvpkt.c#L203-L209)
+|[sndrcvpkt.c: sndrcv_pkt()](https://github.com/tanuki-project/Networking/blob/main/sndrcvpkt/sndrcvpkt.c#L203-L209)|
+|-|
 
 # 3. ツールの実行
 
