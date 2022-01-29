@@ -9,18 +9,20 @@
 
 ## 2.1 ソケットの初期化
 socket関数でRAWソケットを取得し、bind関数を用いて指定したNICに接続します。
+|[pcap.c: init_socket()](https://github.com/tanuki-project/Networking/blob/main/simple_pcap/pcap.c#L83-L102)|
+|-|
 
-　　　[pcap.c: init_socket()](https://github.com/tanuki-project/Networking/blob/main/simple_pcap/pcap.c#L83-L102)
 ## 2.2 パケットの受信
 NICで受信したパケットをrecvmsg関数で一個ずつ読み取ります。
+|[pcap.c: receive_packet()](https://github.com/tanuki-project/Networking/blob/main/simple_pcap/pcap.c#L125-L139)|
+|-|
 
-　　[pcap.c: receive_packet()](https://github.com/tanuki-project/Networking/blob/main/simple_pcap/pcap.c#L125-L139)
 ## 2.3 パケットの解析
 受信したパケットをイーサネット、IP、TCP/UDPといった順にヘッダを解析していきます。
  
 OSのヘッダファイルには各種プロトコルのヘッダ情報に対応する構造体が定義されています。それらと受信データを対応付けることでヘッダ情報の内容を読み取っていきます。
- 
-　　[pcap.c: print_packet()](https://github.com/tanuki-project/Networking/blob/main/simple_pcap/pcap.c#L164-L203)
+|[pcap.c: print_packet()](https://github.com/tanuki-project/Networking/blob/main/simple_pcap/pcap.c#L164-L203)|
+|-|
 
 例えば、TCPでは以下のように受信データを対応付けることで内容の読み取りが容易になります。
 - 受信データの 0～13バイト　→　ethhdr構造体にマッピング
@@ -70,4 +72,3 @@ ARP REQ(1) 10:66:82:39:1a:30/192.168.10.1 -> 0:0:0:0:0:0/192.168.10.61
 ARP REP(2) b8:ae:ed:72:34:c8/192.168.10.61 -> 10:66:82:39:1a:30/192.168.10.1
 ^C
 ```
-
