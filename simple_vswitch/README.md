@@ -23,7 +23,7 @@ vswconfigは以下のサブコマンドを持つ管理コマンドです。仮�
 
 ## 2.1 受信ハンドラの登録
 
-vswconfig add コマンドを実行すると vswitch.ko ではカーネル関数 netdev_rx_handler_register() により指定されたNICに対してパケットの受信ハンドラを登録し、NICをプロミスキャスモードに設定します。
+vswconfig add コマンドを実行すると vswitch.ko ではカーネル関数 netdev_rx_handler_register() により、指定されたNICにおいてパケットを受信した際に呼び出される受信ハンドラを登録した後、NICをプロミスキャスモードに設定します。
 
 |[vswitch_packet.c: vswitch_rx_handler_register()](https://github.com/tanuki-project/Networking/blob/main/simple_vswitch/src/drv/vswitch_packet.c#L26-L41)|
 |-|
@@ -41,7 +41,7 @@ NICでパケットを受信した場合、2.1で登録した受信ハンドラ�
 ## 2.3 パケットの転送
 
 - 宛先MACアドレスがユニキャストの場合、FDBから転送先のポートを検索します。
-- 有効な転送先ポートが見つかった場合、カーネル　関数dev_queue_xmit() により該当ポートからパケットを送信します。　
+- 有効な転送先ポートが見つかった場合、カーネル関数 dev_queue_xmit() により該当ポートからパケットを送信します。　
 - 転送先ポートが見つからない場合や宛先がマルチキャストアドレスの場合、パケットを受信したポートを除く全てのポートからパケットを送信します。
 
 |[vswitch_packet.c: vswitch_forward()](https://github.com/tanuki-project/Networking/blob/main/simple_vswitch/src/drv/vswitch_packet.c#L121-L178)|
