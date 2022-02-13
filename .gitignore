@@ -51,6 +51,9 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Java Class files
+*.class
+
 # Binary Modules
 simple_vswitch/bin/cmd/vswconfig
 simple_vswitch/src/cmd/vswconfig
