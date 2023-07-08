@@ -64,4 +64,5 @@ sndrcvpkt/sndrcvpkt
 watch_netlink/linkmonitor
 tcp_sock/tcptpc
 tcp_sock/tcptps
+udev_monitor/udev_monitor
 
